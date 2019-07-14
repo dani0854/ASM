@@ -195,11 +195,30 @@ GuiControl, Text, CurrentAction, Создание config.ini
 Loop {
 	try {
 		FileAppend,,  config.ini, CP1200
-		IniWrite, %updatedVersion%, config.ini, Main, version
 		IniWrite, 1, config.ini, Main, update
-		IniWrite, %LibDir%, config.ini, Main, libraryPath
 	} catch {
 		MsgBox, 53, Ошибка, Ошибка во время создания config.ini
+		IfMsgBox, Cancel
+			ExitApp
+		IfMsgBox, Retry
+			continue
+	}
+	break
+}
+GuiControl,, progressBar, 80
+; Запись в реестр
+Loop {
+	try {
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, InstallDir, %Dir%
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, LibraryDir, %LibDir%
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, version, %updatedVersion%
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM, DisplayName, AutoHotkey Script Manager
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM, DisplayVersion, %updatedVersion%
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM, InstallLocation, %Dir%
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM, DisplayIcon, %Dir%\asm.exe
+		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM, UninstallString, %Dir%\uninstall.exe
+	} catch {
+		MsgBox, 53, Ошибка, Ошибка во время записи в реестр
 		IfMsgBox, Cancel
 			ExitApp
 		IfMsgBox, Retry

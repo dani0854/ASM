@@ -11,6 +11,7 @@ if not (A_IsAdmin or RegExMatch(DllCall("GetCommandLine", "str"), " /restart(?!\
 		ExitApp
     }
 }
+
 Gui, Font, s10
 Gui, Add, Text, x20 y20 w280 h30, Деинсталяция ASM.
 Gui, Font, s8
@@ -25,11 +26,43 @@ Gui, Show, AutoSize, Деинсталяция ASM.
 return
 
 Install:
+Loop {
+    try {
+        RegRead, InstallDir, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, InstallDir
+        if ErrorLevel {
+            throw
+        }
+        if FileExist(InstallDir . "\delete.bat") {
+                FileDelete, %InstallDir%\delete.bat
+        }
+        FileAppend, :delete, %InstallDir%\delete.bat
+        GuiControlGet, DeleteLib,,DeleteLib
+        if DeleteLib {
+            RegRead, LibraryDir, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, LibraryDir
+            if ErrorLevel {
+                throw
+            }
+            FileAppend, `r`nrmdir /q /s "%LibraryDir%" `r`nif exist "%LibraryDir%" goto delete, %InstallDir%\delete.bat
+        }
+        FileAppend, `r`nrmdir /q /s "%InstallDir%" `r`nif exist "%InstallDir%" goto delete, %InstallDir%\delete.bat
+        RegDelete, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM
+        RegDelete, HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\DoshikSoft-ASM
+        Run, %InstallDir%\delete.bat,, Hide
+        ExitApp
+    } catch {
+        MsgBox, 50, Ошибка, Ошибка во время удаления.
+        IfMsgBox, Abort
+            ExitApp
+        IfMsgBox, Retry
+            continue
+    }
+    break
+}
 return
 
 Cancel:
 GuiClose:
-MsgBox, 292, Установщик ASM, Вы уверены что хотите прекратить установку?
+MsgBox, 292, Удаление ASM, Вы уверены что хотите прекратить удаление?
 IfMsgBox, Yes
 	ExitApp
 return
