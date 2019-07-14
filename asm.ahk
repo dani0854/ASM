@@ -34,7 +34,7 @@ if !FileExist(A_ScriptDir . "\config.ini") { ; Check for config
 IniRead, autoUpdate, %A_ScriptDir%\config.ini, Main, update
 if autoUpdate { ; Auto update
 	Loop {
-		IniRead, currentVersion, %A_ScriptDir%\config.ini, Main, version
+		RegRead, currentVersion, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, version
 		latestVersion := get("https://doshik-soft.ru/asm/version.txt")
 		if ErrorLevel {
 			MsgBox, 50, Ошибка, Не удалось проверить наличие обновления.
