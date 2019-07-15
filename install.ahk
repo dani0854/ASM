@@ -119,8 +119,7 @@ if (Dir == A_ProgramFiles . "\Doshik Soft\ASM") {
 	return
 }
 if (LibDir == A_MyDocuments . "\ASM Library") {
-	SetWorkingDir, %A_MyDocuments%
-	FileCreateDir, ASM Library
+	FileCreateDir, %LibDir%
 } else if !FileExist(LibDir) {
 	MsgBox, 48, Ошибка, Указан несуществующий путь для библиотеки скриптов.
 	GuiControl, Enable, Install
@@ -205,8 +204,25 @@ Loop {
 	}
 	break
 }
+GuiControl,, progressBar, 75
+; Cоздание файлов в библиотеке
+GuiControl, Text, CurrentAction, Создание библиотеки
+Loop {
+	try {
+		FileCreateDir, %LibDir%\.asm
+		FileAppend,, %LibDir%\.asm\script_info.ini, CP1200
+	} catch {
+		MsgBox, 53, Ошибка, Ошибка во время создания библиотеки
+		IfMsgBox, Cancel
+			ExitApp
+		IfMsgBox, Retry
+			continue
+	}
+	break
+}
 GuiControl,, progressBar, 80
 ; Запись в реестр
+GuiControl, Text, CurrentAction, Запись в реестр
 Loop {
 	try {
 		RegWrite, REG_SZ, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, InstallDir, %Dir%
