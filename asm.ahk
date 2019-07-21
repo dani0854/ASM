@@ -132,6 +132,7 @@ if autoUpdate { ; Auto update
 ;TODO add test for non existent regestry
 
 
+tqwer := new EXTENSION("C:\repo\ASM\extensions\Test")
 
 class EXTENSION_TRIGGER
 {
@@ -158,7 +159,8 @@ class EXTENSION_TRIGGER
 
 class EXTENSION
 {
-	__New(dir) {
+	__New(dir) 
+	{
 		add_log(5, "Creating EXTENSION Object for - " . dir)
 		this.dir := dir
 		IniRead, name, %dir%\manifest.ini, MAIN, name
@@ -166,38 +168,43 @@ class EXTENSION
 			add_log(3, "ERROR: Couldn't find name in manifest")
 			throw
 		}
+		this.name := name
 		add_log(5, "Extension name - " . name)
-		;general
-		IniRead, active, %dir%\manifest.ini, MAIN, active, 0
-		IniRead, description, %dir%\manifest.ini, MAIN, description, %A_Space%
-		IniRead, version, %dir%\manifest.ini, MAIN, version, 0.0.0
-		this.active := active
-		this.description := description
-		this.version := version
 		
 		;update
 		IniRead, update, %dir%\manifest.ini, MAIN, update, 0
 		IniRead, update_dir, %dir%\manifest.ini, MAIN, update_dir, 0
+		IniRead, version, %dir%\manifest.ini, MAIN, version, 0.0.0
 		this.update := update
 		this.update_dir := update_dir
+		this.version := version
 		
-		;triggers
-		IniRead, sect, %dir%\manifest.ini
+		if update {
+			add_log(5, "Autoupdate enabled. Trying to update.")
+			this.update_extension() 
+		} else {
+			add_log(5, "Autoupdate disabled.")
+		}
 		
+		;general
+		IniRead, active, %dir%\manifest.ini, MAIN, active, 0
+		IniRead, description, %dir%\manifest.ini, MAIN, description, %A_Space%
+		this.active := active
+		this.description := description
 	}
 	
-	update() 
+	update_extension() 
 	{
 		add_log(5, "Updating extension - " . this.name)
 		Loop {
 			try {
-				if this.update_dir {
+				if !this.update_dir {
 					add_log(3, "ERROR: Update Dir empty")
 					throw
 				}
 				add_log(5, "Update Dir - " . this.update_dir)
 				add_log(5, "Downloading latest manifest")
-				latestManifestRaw := get(this.update_dir . "\manifest.ini")
+				latestManifestRaw := get(this.update_dir . "/manifest.ini")
 				if ErrorLevel {
 					add_log(3, "ERROR: Manifest not found")
 					throw
@@ -257,7 +264,7 @@ class EXTENSION
 						add_log(5, "Checking if " . file1 . " up to date")
 						if (file2 != FileMD5(dir . "\" . file1)) {
 							add_log(5, "Downloading - " . file1)
-							URLDownloadToFile, %update_dir%\%file1%, %dir%\%file1%
+							URLDownloadToFile, %update_dir%/%file1%, %dir%\%file1%
 							if ((file2 != FileMD5(dir . "\" . file1)) and file2) {
 								add_log(3, "ERROR: Md5sums don't match")
 								throw
@@ -286,6 +293,19 @@ class EXTENSION
 				break
 			}
 			FileDelete, %A_Temp%\ds_asm_manifest.ini
+			dir := this.dir
+			IniRead, name, %dir%\manifest.ini, MAIN, name
+			if (name == "ERROR") {
+				add_log(3, "ERROR: Couldn't find name in manifest")
+				throw
+			}
+			this.name := name
+			IniRead, update, %dir%\manifest.ini, MAIN, update, 0
+			IniRead, update_dir, %dir%\manifest.ini, MAIN, update_dir, 0
+			IniRead, version, %dir%\manifest.ini, MAIN, version, 0.0.0
+			this.update := update
+			this.update_dir := update_dir
+			this.version := version
 			return 1
 		} else {
 			add_log(3, "Extension " . this.name . " up to date")
@@ -293,6 +313,7 @@ class EXTENSION
 			return 0
 		}
 	}
+	
 }
 
 /*
