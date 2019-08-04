@@ -3,9 +3,11 @@
 SendMode Input
 #Include %A_ScriptDir%\library\log.ahk
 
+
 global LibDir
 RegRead, LibDir, HKEY_LOCAL_MACHINE\SOFTWARE\DoshikSoft\ASM, LibraryDir
-
+MsgBox Hello World
+return
 if FileExist(A_ScriptDir . "\log.txt") {
 	FileDelete, %A_ScriptDir%\log.txt
 }
@@ -133,19 +135,19 @@ if autoUpdate { ; Auto update
 
 
 tqwer := new EXTENSION("C:\repo\ASM\extensions\Test")
+tqwer.init_trigers()
+
 
 class EXTENSION_TRIGGER
 {
-	__New(typ, dir, disp_nme, desc := "", wait := false, prior := 10, filter := ".*") {
+	__New(typ, dir, disp_nme := "", desc := "", wait := false, prior := 10, filter := ".*") {
 		if !RegExMatch(typ, "i)^(?:start|exit|edit|new|settings|run|finish|label)$") {
 			throw
 		}
 		if !FileExist(dir) {
 			throw
 		}
-		if (disp_nme = "") {
-			throw
-		}
+		if RegExMatch(typ, "i)^(?:edit|new|settings|label)$")
 		this.typ := typ
 		this.dir := dir
 		this.disp_nme := disp_nme
@@ -159,7 +161,7 @@ class EXTENSION_TRIGGER
 
 class EXTENSION
 {
-	__New(dir) 
+	__New(dir, update_check := 1) 
 	{
 		add_log(5, "Creating EXTENSION Object for - " . dir)
 		this.dir := dir
@@ -179,7 +181,7 @@ class EXTENSION
 		this.update_dir := update_dir
 		this.version := version
 		
-		if update {
+		if (update and update_check) {
 			add_log(5, "Autoupdate enabled. Trying to update.")
 			this.update_extension() 
 		} else {
@@ -248,14 +250,14 @@ class EXTENSION
 			Loop {
 				try {
 					IniRead, filesRaw, %A_Temp%\ds_asm_manifest.ini, FILES
-					dir = this.dir
+					dir := this.dir
 					update_dir := this.update_dir
 					Loop, Parse, filesRaw, `n, `r
 					{
 						if RegExMatch(A_LoopField, "^(.+?)=(.+?)$", file) {
 							add_log(5, "Couldn't find md5sum")
-						} else if !A_LoopField {
-							file1 := file
+						} else if A_LoopField {
+							file1 := A_LoopField
 							file2 := 0
 						} else {
 							add_log(3, "No file dir given")
@@ -270,14 +272,15 @@ class EXTENSION
 								throw
 							}
 							add_log(5, "File downloaded successfully")
+						} else {
+							add_log(5, "File is up to date")
 						}
-						add_log(5, "File is up to date")
 					}
 					FileDelete, %dir%\manifest.ini
 					FileAppend, %latestManifestRaw%, %dir%\manifest.ini, CP1200
 				} catch {
 					name := this.name
-					add_log(1, "ERROR: Could download extension updates for " . name)
+					add_log(1, "ERROR: Couldn't download extension updates for " . name)
 					MsgBox, 50, Ошибка, Не удалось скачать обновления расширения %name%.
 					IfMsgBox, Abort
 					{
@@ -311,6 +314,27 @@ class EXTENSION
 			add_log(3, "Extension " . this.name . " up to date")
 			FileDelete, %A_Temp%\ds_asm_manifest.ini
 			return 0
+		}
+	}
+	
+	init_trigers() {
+		dir := this.dir
+		IniRead, all_sect, %dir%\manifest.ini
+		this.triggers := []
+		Loop, Parse, filesRaw, `n, `r
+		{
+			if RegExMatch(A_LoopField, "^TRIGER__(.+?)$", trigg_name) {
+				add_log(5, "Loading trigger - " . trigg_name)
+				IniRead, trigg_typ, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_type, 0
+				IniRead, trigg_dir, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_dir, 0
+				IniRead, trigg_disp_nme, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_display_name, %A_Space%
+				IniRead, trigg_desc, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_description, %A_Space%
+				IniRead, trigg_wait, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_wait, %A_Space%
+				IniRead, trigg_prior, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_priority, %A_Space%
+				IniRead, trigg_filt, %dir%\manifest.ini, TRIGER__%trigg_name%, Trigger_filter, .*
+				%trigg_name% := new EXTENSION_TRIGGER(trigg_typ, trigg_dir, trigg_disp_nme, trigg_desc, trigg_wait, trigg_prior, trigg_filt)
+				this.triggers.Push(%trigg_name%)
+			}
 		}
 	}
 	
