@@ -1,4 +1,6 @@
-# ASM ![Image](src/Resources/asm.ico "ASM")
+# ![Image](src/Resources/asm.ico "ASM")
+
+# ASM
 Script manager for Autohotkey scripts.
 
 ## How to build
