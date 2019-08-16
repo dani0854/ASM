@@ -1,3 +1,3 @@
 *.bak
-log.txt
-version.txt
+build/log.txt
+build/version.txt
