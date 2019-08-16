@@ -1,0 +1,4 @@
+asm.exe
+update.exe
+uninstall.exe
+install.exe
